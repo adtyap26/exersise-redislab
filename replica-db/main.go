@@ -22,15 +22,15 @@ func main() {
 	}
 	fmt.Println("Connected to replica-db")
 
-	values, err := rdb.LRange(ctx, "numbers", 0, -1).Result()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	fmt.Println("Values in reverse order:")
-	for i := len(values) - 1; i >= 0; i-- {
-		fmt.Printf("%s ", values[i])
-		if (len(values)-i)%10 == 0 {
+	for i := 100; i >= 1; i-- {
+		key := fmt.Sprintf("%d", i)
+		val, err := rdb.Get(ctx, key).Result()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%s ", val)
+		if (100-i+1)%10 == 0 {
 			fmt.Println()
 		}
 	}

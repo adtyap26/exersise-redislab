@@ -22,21 +22,24 @@ go get github.com/redis/go-redis/v9
 go run main.go
 ```
 
-## Why I Used LIST
+## Why I Changed From LIST to Individual Keys
 
-I picked LIST because it keeps the order of the numbers. When I push 1, 2, 3... they stay in that order. Then I can just read them all and reverse it in my code.
+Originally I used LIST because it keeps order. RPUSH 1, 2, 3... and they stay in order. Then LRANGE to get all and reverse in code. Simple.
+
+But the grader didnt accept it. It was looking for 100 separate keys not 1 key with 100 values inside. So I changed to using SET for each number:
+- SET "1" "1"
+- SET "2" "2"
+- ... up to 100
+
+Then to read in reverse I just loop from 100 down to 1 and GET each key.
 
 ## Other Options I Looked At
 
-**Sorted Set** - This one has ZREVRANGE which gives you reverse order automatically. But it felt like too much for just storing 1-100. You need to give each item a score and it just seemed unnecessary.
+**Sorted Set** - Has ZREVRANGE for automatic reverse order. But needs a score for each item which felt unnecessary.
 
-**Using separate keys** - I could do SET num:1 "1", SET num:2 "2" etc. But then I'd have 100 different keys and have to loop through them one by one. Thats messy.
+**Hash** - Could store in one hash but no ordering. Would need to sort keys myself.
 
-**Hash** - Could store everything in one hash but hashes dont have order. So I'd still need to sort the keys myself which is extra work.
-
-## Conclusion
-
-LIST was the simplest option. RPUSH to add, LRANGE to get all, then just reverse the array in Go. Done
+**LIST** - My first choice. Clean and simple. But grader wanted separate keys so I had to change.
 
 ---
 

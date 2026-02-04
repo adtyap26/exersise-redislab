@@ -22,18 +22,13 @@ func main() {
 	}
 	fmt.Println("Connected to source-db")
 
-	rdb.Del(ctx, "numbers")
-
-	values := make([]interface{}, 100)
 	for i := 1; i <= 100; i++ {
-		values[i-1] = i
+		key := fmt.Sprintf("%d", i)
+		err = rdb.Set(ctx, key, i, 0).Err()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	err = rdb.RPush(ctx, "numbers", values...).Err()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	count, _ := rdb.LLen(ctx, "numbers").Result()
-	fmt.Printf("Inserted %d values into source-db\n", count)
+	fmt.Println("Inserted 100 keys into source-db")
 }
