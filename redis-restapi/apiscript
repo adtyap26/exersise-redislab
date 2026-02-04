@@ -33,6 +33,17 @@ case "$1" in
             echo "Usage: $0 add user <file.txt>"
         fi
         ;;
+    list)
+        if [ "$2" = "users" ]; then
+            printf "%-20s %-15s %s\n" "NAME" "ROLE" "EMAIL"
+            printf "%-20s %-15s %s\n" "----" "----" "-----"
+            curl -s -k "$API_URL/v1/users" -u "$USER:$PASS" | jq -r '.[] | "\(.name)|\(.role)|\(.email)"' | while IFS='|' read -r name role email; do
+                printf "%-20s %-15s %s\n" "$name" "$role" "$email"
+            done
+        else
+            echo "Usage: $0 list users"
+        fi
+        ;;
     delete)
         if [ "$2" = "database" ] && [ -n "$3" ]; then
             DB_UID=$(curl -s -k -X GET "$API_URL/v1/bdbs" -u "$USER:$PASS" | jq -r ".[] | select(.name==\"$3\") | .uid")
@@ -54,6 +65,7 @@ case "$1" in
         echo "  $0 create database <name>"
         echo "  $0 create role <name>"
         echo "  $0 add user <file.txt>"
+        echo "  $0 list users"
         echo "  $0 delete database <name>"
         ;;
 esac
