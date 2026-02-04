@@ -1,0 +1,59 @@
+#!/bin/bash
+
+API_URL="https://re-cluster1.ps-redislabs.org:9443"
+USER="admin@rl.org"
+PASS='at2sTJM'
+
+
+
+
+case "$1" in
+    create)
+        if [ "$2" = "database" ] && [ -n "$3" ]; then
+            echo "Creating database: $3"
+            curl -s -k -X POST "$API_URL/v1/bdbs" -u "$USER:$PASS" -H "Content-Type: application/json" -d "{\"name\": \"$3\", \"memory_size\": 1073741824, \"type\": \"redis\", \"replication\": false, \"sharding\": false}" | jq .
+        elif [ "$2" = "role" ] && [ -n "$3" ]; then
+            echo "Creating role: $3"
+            curl -s -k -X POST "$API_URL/v1/roles" -u "$USER:$PASS" -H "Content-Type: application/json" -d "{\"name\": \"$3\", \"management\": \"admin\"}" | jq .
+        else
+            echo "Usage: $0 create database <name>"
+            echo "       $0 create role <name>"
+        fi
+        ;;
+    add)
+        if [ "$2" = "user" ] && [ -n "$3" ]; then
+            while IFS=',' read -r email name role; do
+                [ -z "$email" ] && continue
+                ROLE_UID=$(curl -s -k "$API_URL/v1/roles" -u "$USER:$PASS" | jq -r ".[] | select(.name==\"$role\") | .uid")
+                [ -z "$ROLE_UID" ] && ROLE_UID=1
+                echo "Adding user: $name (role: $role, uid: $ROLE_UID)"
+                curl -s -k -X POST "$API_URL/v1/users" -u "$USER:$PASS" -H "Content-Type: application/json" -d "{\"email\": \"$email\", \"name\": \"$name\", \"role_uids\": [$ROLE_UID], \"password\": \"Password123!\"}" | jq .
+            done < "$3"
+        else
+            echo "Usage: $0 add user <file.txt>"
+        fi
+        ;;
+    delete)
+        if [ "$2" = "database" ] && [ -n "$3" ]; then
+            DB_UID=$(curl -s -k -X GET "$API_URL/v1/bdbs" -u "$USER:$PASS" | jq -r ".[] | select(.name==\"$3\") | .uid")
+            if [ -n "$DB_UID" ]; then
+                echo "Deleting database: $3 (UID: $DB_UID)"
+                curl -s -k -X DELETE "$API_URL/v1/bdbs/$DB_UID" -u "$USER:$PASS"
+                echo "Done"
+            else
+                echo "Database not found: $3"
+            fi
+        else
+            echo "Usage: $0 delete database <name>"
+        fi
+        ;;
+    *)
+        echo "Redis REST API Tool"
+        echo ""
+        echo "Usage:"
+        echo "  $0 create database <name>"
+        echo "  $0 create role <name>"
+        echo "  $0 add user <file.txt>"
+        echo "  $0 delete database <name>"
+        ;;
+esac
